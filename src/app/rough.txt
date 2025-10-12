@@ -1,0 +1,429 @@
+"use client";
+import { useState } from "react";
+import axios from "axios";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { GoogleLogin } from "@react-oauth/google";
+
+export default function Login() {
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [msg, setMsg] = useState("");
+  const router = useRouter();
+
+  const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleSubmit = async e => {
+    e.preventDefault();
+    setMsg("");
+    try {
+      const res = await axios.post("http://localhost:5000/login", form);
+      setMsg(res.data.message);
+      if (res.data.token) {
+        localStorage.setItem("token", res.data.token);
+        router.push("/");
+      }
+    } catch (err) {
+      setMsg(err.response?.data?.error || "Login failed");
+    }
+  };
+  const handleGoogleLogin = async (credentialResponse) => {
+    try {
+      const res = await axios.post("http://localhost:5000/google-login", {
+        tokenId: credentialResponse.credential,
+      });
+      setMsg(res.data.message);
+      if (res.data.token) {
+        localStorage.setItem("token", res.data.token);
+        router.push("/");
+      }
+    } catch (err) {
+      setMsg(err.response?.data?.error || "Google signup failed");
+    }
+  };
+  return (
+    <form onSubmit={handleSubmit} style={{ maxWidth: 400, margin: "2rem auto" }}>
+      <h2>Login</h2>
+      <input name="email" placeholder="Email" value={form.email} onChange={handleChange} required type="email" />
+      <input name="password" placeholder="Password" value={form.password} onChange={handleChange} required type="password" />
+      <button type="submit">Login</button>
+      <div style={{ margin: "16px 0" }}>
+        <GoogleLogin onSuccess={handleGoogleLogin} onError={() => setMsg("Google signup failed")} />
+      </div>
+        <div style={{ marginTop: 16 }}>
+        <span>Don't have an account? </span>
+        <Link href="/signup"><button type="button">Sign Up</button></Link>
+      </div>
+
+      <div>{msg}</div>
+    </form>
+  );
+}
+
+
+"use client";
+import { useState } from "react";
+import axios from "axios";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { GoogleLogin } from "@react-oauth/google";
+
+export default function Signup() {
+  const [form, setForm] = useState({ name: "", email: "", password: "", role: "student" });
+  const [msg, setMsg] = useState("");
+  const router = useRouter();
+
+  const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleSubmit = async e => {
+    e.preventDefault();
+    setMsg("");
+    try {
+      const res = await axios.post("http://localhost:5000/signup", form);
+      setMsg(res.data.message);
+      if (res.data.message?.includes("OTP")) {
+        localStorage.setItem("signupEmail", form.email);
+        router.push("/verify-otp");
+      }
+    } catch (err) {
+      setMsg(err.response?.data?.error || "Signup failed");
+    }
+  };
+
+  const handleGoogleSignup = async (credentialResponse) => {
+    try {
+      const res = await axios.post("http://localhost:5000/google-signup", {
+        tokenId: credentialResponse.credential,
+      });
+      setMsg(res.data.message);
+      if (res.data.token) {
+        localStorage.setItem("token", res.data.token);
+        router.push("/");
+      }
+    } catch (err) {
+      setMsg(err.response?.data?.error || "Google signup failed");
+    }
+  };
+
+  return (
+    <div style={{
+      minHeight: "100vh",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      background: "linear-gradient(135deg, #232526 0%, #414345 100%)"
+    }}>
+      <div style={{
+        background: "#18191A",
+        color: "#fff",
+        padding: "2rem",
+        borderRadius: "12px",
+        width: "100%",
+        maxWidth: "400px",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.5)"
+      }}>
+        <h2 style={{ textAlign: "center", marginBottom: "1.5rem" }}>Sign Up</h2>
+        <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            name="name"
+            placeholder="Name"
+            value={form.name}
+            onChange={handleChange}
+            required
+            style={{
+              width: "100%",
+              padding: "0.75rem",
+              marginBottom: "1rem",
+              borderRadius: "6px",
+              border: "1px solid #444",
+              background: "#232526",
+              color: "#fff"
+            }}
+          />
+          <input
+            type="email"
+            name="email"
+            placeholder="Email"
+            value={form.email}
+            onChange={handleChange}
+            required
+            style={{
+              width: "100%",
+              padding: "0.75rem",
+              marginBottom: "1rem",
+              borderRadius: "6px",
+              border: "1px solid #444",
+              background: "#232526",
+              color: "#fff"
+            }}
+          />
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            value={form.password}
+            onChange={handleChange}
+            required
+            style={{
+              width: "100%",
+              padding: "0.75rem",
+              marginBottom: "1rem",
+              borderRadius: "6px",
+              border: "1px solid #444",
+              background: "#232526",
+              color: "#fff"
+            }}
+          />
+          <select
+            name="role"
+            value={form.role}
+            onChange={handleChange}
+            style={{
+              width: "100%",
+              padding: "0.75rem",
+              marginBottom: "1rem",
+              borderRadius: "6px",
+              border: "1px solid #444",
+              background: "#232526",
+              color: "#fff"
+            }}
+          >
+            <option value="student">Student</option>
+            <option value="company">Company</option>
+          </select>
+          <button
+            type="submit"
+            style={{
+              width: "100%",
+              padding: "0.75rem",
+              borderRadius: "6px",
+              border: "none",
+              background: "#1976d2",
+              color: "#fff",
+              fontWeight: "bold",
+              fontSize: "1rem",
+              cursor: "pointer"
+            }}
+          >
+            Sign Up
+          </button>
+        </form>
+        <div style={{ margin: "1.5rem 0", textAlign: "center" }}>
+          <GoogleLogin onSuccess={handleGoogleSignup} onError={() => setMsg("Google signup failed")} />
+        </div>
+        <div style={{ textAlign: "center", marginTop: "1rem" }}>
+          <span style={{ color: "#bbb" }}>Have an account? </span>
+          <Link href="/login" style={{ color: "#90caf9", fontWeight: 600 }}>Login</Link>
+        </div>
+        {msg && (
+          <div style={{ marginTop: "1rem", color: "#ff5252", textAlign: "center" }}>
+            {msg}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+"use client";
+import { useState } from "react";
+import axios from "axios";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { GoogleLogin } from "@react-oauth/google";
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  TextField,
+  Typography,
+  Divider,
+  Stack
+} from "@mui/material";
+import { alpha } from "@mui/material/styles";
+
+export default function Login() {
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [msg, setMsg] = useState("");
+  const router = useRouter();
+
+  const handleChange = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setMsg("");
+    try {
+      const res = await axios.post("http://localhost:5000/login", form);
+      setMsg(res.data.message);
+      if (res.data.token) {
+        localStorage.setItem("token", res.data.token);
+        router.push("/");
+      }
+    } catch (err) {
+      setMsg(err.response?.data?.error || "Login failed");
+    }
+  };
+
+  const handleGoogleLogin = async (credentialResponse) => {
+    try {
+      const res = await axios.post("http://localhost:5000/google-login", {
+        tokenId: credentialResponse.credential,
+      });
+      setMsg(res.data.message);
+      if (res.data.token) {
+        localStorage.setItem("token", res.data.token);
+        router.push("/");
+      }
+    } catch (err) {
+      setMsg(err.response?.data?.error || "Google signup failed");
+    }
+  };
+
+  return (
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "radial-gradient(circle at bottom,rgb(18, 36, 74),rgb(12, 22, 43),rgb(7, 13, 27), #000)",
+        color: "#fff",
+      }}
+    >
+      <Card
+        sx={{
+          width: "100%",
+          maxWidth: 400,
+          borderRadius: "24px",
+          // background: alpha("#1a1a1a", 0.8),
+          background: `
+          radial-gradient(circle at left 20% center, rgba(18,36,74,0.7) 0, transparent 60%),
+          radial-gradient(circle at right 80% center, rgba(18,36,74,0.7) 0, transparent 60%),
+          linear-gradient(135deg, #232526 0%, #414345 100%)
+        `,
+          // backdropFilter: "blur(10px)",
+          boxShadow: "0 0 25px rgba(0,0,0,0.6)",
+          p: 3,
+        }}
+      >
+        <CardContent>
+          <Typography
+            variant="h4"
+            align="center"
+            sx={{ mb: 1, fontWeight: "bold", color: "#fff" }}
+          >
+            Log in
+          </Typography>
+          {/* <Typography
+            align="center"
+            variant="body2"
+            sx={{ mb: 3, color: "#aaa" }}
+          >
+            Log in to your account and seamlessly continue managing your
+            projects, ideas, and progress just where you left off.
+          </Typography> */}
+
+          <form onSubmit={handleSubmit}>
+            <TextField
+              fullWidth
+              margin="normal"
+              label="Enter your email address"
+              name="email"
+              value={form.email}
+              onChange={handleChange}
+              required
+              type="email"
+              variant="outlined"
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: "12px",
+                  color: "#fff",
+                  "& fieldset": {
+                    borderColor: "#333",
+                  },
+                  "&:hover fieldset": {
+                    borderColor: "#1976d2",
+                  },
+                },
+                "& .MuiInputLabel-root": { color: "#bbb" },
+              }}
+            />
+
+            <TextField
+              fullWidth
+              margin="normal"
+              label="Enter your password"
+              name="password"
+              value={form.password}
+              onChange={handleChange}
+              required
+              type="password"
+              variant="outlined"
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: "12px",
+                  color: "#fff",
+                  "& fieldset": {
+                    borderColor: "#333",
+                  },
+                  "&:hover fieldset": {
+                    borderColor: "#1976d2",
+                  },
+                },
+                "& .MuiInputLabel-root": { color: "#bbb" },
+              }}
+            />
+
+            <Button
+              fullWidth
+              type="submit"
+              variant="contained"
+              sx={{
+                mt: 3,
+                py: 1.2,
+                borderRadius: "12px",
+                backgroundColor: "#1976d2",
+                fontWeight: "bold",
+                textTransform: "none",
+                "&:hover": { backgroundColor: "#1565c0" },
+              }}
+            >
+              Log in
+            </Button>
+          </form>
+
+          <Divider sx={{ my: 3, borderColor: "#333" }}>or</Divider>
+
+          <Stack direction="column" alignItems="center" spacing={2}>
+            <GoogleLogin
+              onSuccess={handleGoogleLogin}
+              onError={() => setMsg("Google signup failed")}
+            />
+          </Stack>
+
+          <Typography
+            align="center"
+            variant="body2"
+            sx={{ mt: 3, color: "#aaa" }}
+          >
+            Don’t have an account?{" "}
+            <Link
+              href="/signup"
+              style={{ color: "#1976d2", textDecoration: "none" }}
+            >
+              Sign up
+            </Link>
+          </Typography>
+
+          {msg && (
+            <Typography align="center" color="error" sx={{ mt: 2 }}>
+              {msg}
+            </Typography>
+          )}
+        </CardContent>
+      </Card>
+    </Box>
+  );
+}
