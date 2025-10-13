@@ -1,6 +1,7 @@
+// src/app/(protected)/layout.js
 "use client";
-import AuthGuard from "../components/AuthGuard";
 
 export default function ProtectedLayout({ children }) {
-  return <AuthGuard>{children}</AuthGuard>;
+  // No need to check token here; middleware handles it
+  return <>{children}</>;
 }

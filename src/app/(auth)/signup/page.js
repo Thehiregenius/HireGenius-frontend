@@ -3,22 +3,21 @@ import { useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Cookies from "js-cookie";
 import { GoogleLogin } from "@react-oauth/google";
 import {
   TextField,
-  Button,
   Typography,
-  Divider,
-  Stack,
   MenuItem,
   Select,
   InputLabel,
   FormControl,
 } from "@mui/material";
 
-import SharedFields from "../components/SharedFields";
+import SharedFields from "../../../components/SharedFields";
 
-import AuthCard from "../components/AuthCard";
+import AuthCard from "../../../components/AuthCard";
+
 export default function Signup() {
   const [form, setForm] = useState({ name: "", email: "", password: "", role: "student" });
   const [msg, setMsg] = useState("");
@@ -26,16 +25,22 @@ export default function Signup() {
 
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSubmit = async e => {
+const handleSubmit = async e => {
     e.preventDefault();
     setMsg("");
     try {
-      const res = await axios.post("http://localhost:5000/signup", form);
+      const res = await axios.post("http://localhost:5000/signup", form, {
+        withCredentials: true, // ✅ Important for cookies
+      });
+
       setMsg(res.data.message);
+
+      // OTP flow
       if (res.data.message?.includes("OTP")) {
         localStorage.setItem("signupEmail", form.email);
         router.push("/verify-otp");
       }
+
     } catch (err) {
       setMsg(err.response?.data?.error || "Signup failed");
     }
@@ -45,12 +50,15 @@ export default function Signup() {
     try {
       const res = await axios.post("http://localhost:5000/google-signup", {
         tokenId: credentialResponse.credential,
+      }, {
+        withCredentials: true, // ✅ Important for cookies
       });
+
       setMsg(res.data.message);
-      if (res.data.token) {
-        localStorage.setItem("token", res.data.token);
-        router.push("/");
-      }
+
+      // If backend sent cookie, just redirect to homepage
+      router.push("/home");
+
     } catch (err) {
       setMsg(err.response?.data?.error || "Google signup failed");
     }
@@ -71,17 +79,13 @@ export default function Signup() {
             onChange={handleChange}
             required
             sx={{
-              "& .MuiOutlinedInput-root": {
-                borderRadius: "12px",
-                background: "#232526",
-                color: "#fff",
-                "& fieldset": { borderColor: "#fff" },
-                "&:hover fieldset": { borderColor: "#fff", background: "#2c2f34" },
-                "&.Mui-focused fieldset": { borderColor: "#fff", background: "#2c2f34" },
+            input: {
+              '&:-webkit-autofill': {
+                WebkitBoxShadow: '0 0 0 1000px white inset',
+                WebkitTextFillColor: '#000',
               },
-              "& .MuiInputLabel-root": { color: "#eee" },
-              "& .MuiInputBase-input": { color: "#fff" },
-            }}
+            },
+          }}
           />
           <SharedFields form={form} handleChange={handleChange} />
       
@@ -95,35 +99,12 @@ export default function Signup() {
               value={form.role}
               label="Role"
               onChange={handleChange}
-              sx={{
-                color: "#fff",
-                background: "#232526",
-                borderRadius: "12px",
-                "& .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#fff",
-                },
-                "&:hover .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#fff",
-                  background: "#2c2f34",
-                },
-                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#fff",
-                  background: "#2c2f34",
-                },
-              }}
-              MenuProps={{
-                PaperProps: {
-                  sx: {
-                    bgcolor: "#232526",
-                    color: "#fff",
-                  },
-                },
-              }}
+              
             >
-              <MenuItem value="student" sx={{ bgcolor: "#232526", color: "#fff" }}>
+              <MenuItem value="student" >
                 Student
               </MenuItem>
-              <MenuItem value="company" sx={{ bgcolor: "#232526", color: "#fff" }}>
+              <MenuItem value="company">
                 Company
               </MenuItem>
             </Select>
@@ -139,9 +120,9 @@ export default function Signup() {
         />
       }
       bottomText={
-        <Typography align="center" variant="body2" sx={{ mt: 3, color: "#aaa" }}>
+        <Typography align="center" variant="body2" sx={{ mt: 2, color: "#000" }}>
           Have an account?{" "}
-          <Link href="/login" style={{ color: "#1976d2", fontWeight: 600, textDecoration: "none" }}>
+          <Link href="/login" style={{ color: "#000", fontWeight: 600, textDecoration: "none" }}>
             Login
           </Link>
         </Typography>

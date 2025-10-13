@@ -3,13 +3,14 @@ import { useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Cookies from "js-cookie";
 import { GoogleLogin } from "@react-oauth/google";
-import SharedFields from "../components/SharedFields";
+import SharedFields from "../../../components/SharedFields";
 import {
   Typography,
   
 } from "@mui/material";
-import AuthCard from "../components/AuthCard";
+import AuthCard from "../../../components/AuthCard";
 
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -19,14 +20,25 @@ export default function Login() {
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault();
     setMsg("");
+
     try {
-      const res = await axios.post("http://localhost:5000/login", form);
+      const res = await axios.post(
+        "http://localhost:5000/login",
+        form,
+        { withCredentials: true } // important for cookies
+      );
+
       setMsg(res.data.message);
       if (res.data.token) {
-        localStorage.setItem("token", res.data.token);
+        // Store token in cookie instead of localStorage
+        Cookies.set("token", res.data.token, {
+          expires: 7, // expires in 7 days
+          secure: true,
+          sameSite: "Strict",
+        });
         router.push("/");
       }
     } catch (err) {
@@ -36,18 +48,29 @@ export default function Login() {
 
   const handleGoogleLogin = async (credentialResponse) => {
     try {
-      const res = await axios.post("http://localhost:5000/google-login", {
-        tokenId: credentialResponse.credential,
-      });
+      const res = await axios.post(
+        "http://localhost:5000/google-login",
+        { tokenId: credentialResponse.credential },
+        { withCredentials: true }
+      );
+
       setMsg(res.data.message);
       if (res.data.token) {
-        localStorage.setItem("token", res.data.token);
-        router.push("/");
+        console.log("Google login response:", res.data.token); // Debugging line
+        Cookies.set("token", res.data.token, {
+          expires: 7,
+          secure: true,
+          sameSite: "Strict",
+        });
+        router
+        .push("/home");
+        console.log("Google login successful, token stored in cookie"); 
       }
     } catch (err) {
       setMsg(err.response?.data?.error || "Google signup failed");
     }
   };
+
 
   return (
 
@@ -56,7 +79,6 @@ export default function Login() {
       fields={
         <>
           <SharedFields form={form} handleChange={handleChange} />
-      
         </>
       }
       onSubmit={handleSubmit}
