@@ -30,10 +30,17 @@ export default function VerifyOtp() {
       );
 
       setMsg(res.data.message);
-
+      // const role = res.data.role;
+      const role = res.data.user?.role;
+      console.log("OTP Verification response role:", role); // Debugging line
       // OTP verified successfully
       localStorage.removeItem("signupEmail");
-      router.push("/"); // token cookie is already set by backend
+      // router.push("/"); // token cookie is already set by backend
+      if(role === "student") {
+        router.push("/student/dashboard");
+      }   else if(role === "company") {
+        router.push("/company/dashboard");
+      }
 
     } catch (err) {
       setMsg(err.response?.data?.error || "Verification failed");

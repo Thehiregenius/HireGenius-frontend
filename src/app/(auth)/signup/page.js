@@ -3,7 +3,7 @@ import { useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Cookies from "js-cookie";
+// import Cookies from "js-cookie";
 import { GoogleLogin } from "@react-oauth/google";
 import {
   TextField,
@@ -57,7 +57,15 @@ const handleSubmit = async e => {
       setMsg(res.data.message);
 
       // If backend sent cookie, just redirect to homepage
-      router.push("/home");
+      // router.push("/home");
+      const role = res.data.user?.role;
+      console.log("OTP Verification response role:", role); // Debugging line
+      
+      if(role === "student") {
+        router.push("/student/dashboard");
+      }   else if(role === "company") {
+        router.push("/company/dashboard");
+      }
 
     } catch (err) {
       setMsg(err.response?.data?.error || "Google signup failed");

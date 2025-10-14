@@ -7,7 +7,7 @@ export function middleware(req) {
   const url = req.nextUrl.pathname;
 
   // Auth routes that shouldn't be accessed when logged in
-const authRoutes = ["/login", "/signup"];
+// const authRoutes = ["/login", "/signup"];
 
 
   // Protected routes

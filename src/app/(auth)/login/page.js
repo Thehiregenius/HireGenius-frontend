@@ -32,15 +32,26 @@ const handleSubmit = async (e) => {
       );
 
       setMsg(res.data.message);
-      if (res.data.token) {
+      const {user, token} = res.data;
+      const role = user.role;
+      console.log("Login response:", role); // Debugging line
+      console.log("Login response token:", token); // Debugging line
+      
+      if (token) {
         // Store token in cookie instead of localStorage
-        Cookies.set("token", res.data.token, {
+        Cookies.set("token", token, {
           expires: 7, // expires in 7 days
           secure: true,
           sameSite: "Strict",
         });
-        router.push("/");
+        // router.push("/");
+        if(role === "student") {
+        router.push("/student/dashboard");
+      } else if(role === "company") {
+        router.push("/company/dashboard");
       }
+      }
+      
     } catch (err) {
       setMsg(err.response?.data?.error || "Login failed");
     }
@@ -55,15 +66,21 @@ const handleSubmit = async (e) => {
       );
 
       setMsg(res.data.message);
-      if (res.data.token) {
-        console.log("Google login response:", res.data.token); // Debugging line
-        Cookies.set("token", res.data.token, {
+      const {user, token} = res.data;
+      const role = user.role;
+      if (token) {
+        console.log("Google login response:", token); // Debugging line
+        Cookies.set("token", token, {
           expires: 7,
           secure: true,
           sameSite: "Strict",
         });
-        router
-        .push("/home");
+        // router.push("/home");
+        if(role === "student") {
+          router.push("/student/dashboard");
+        } else if(role === "company") {
+          router.push("/company/dashboard");
+        }
         console.log("Google login successful, token stored in cookie"); 
       }
     } catch (err) {
