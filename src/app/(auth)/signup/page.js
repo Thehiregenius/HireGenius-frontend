@@ -13,6 +13,7 @@ import {
   InputLabel,
   FormControl,
 } from "@mui/material";
+import { BASE_URL } from "../../../configs/constants";
 
 import SharedFields from "../../../components/SharedFields";
 
@@ -35,7 +36,7 @@ export default function Signup() {
     e.preventDefault();
     setMsg("");
     try {
-      const res = await axios.post("http://localhost:5000/signup", form, {
+      const res = await axios.post(`${BASE_URL}/signup`, form, {
         withCredentials: true, // ✅ Important for cookies
       });
 
@@ -54,7 +55,7 @@ export default function Signup() {
   const handleGoogleSignup = async (credentialResponse) => {
     try {
       const res = await axios.post(
-        "http://localhost:5000/google-signup",
+        `${BASE_URL}/google-signup`,
         {
           tokenId: credentialResponse.credential,
         },

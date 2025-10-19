@@ -2,12 +2,13 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import { BASE_URL } from "../../../configs/constants";
 
 export default function VerifyOtp() {
   const [otp, setOtp] = useState("");
   const [msg, setMsg] = useState("");
   const router = useRouter();
-   const [email, setEmail] = useState("");
+  const [email, setEmail] = useState("");
   useEffect(() => {
     if (typeof window !== "undefined") {
       const storedEmail = localStorage.getItem("signupEmail");
@@ -19,12 +20,12 @@ export default function VerifyOtp() {
     }
   }, [router]);
 
-  const handleSubmit = async e => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setMsg("");
     try {
       const res = await axios.post(
-        "http://localhost:5000/verify-otp",
+        `${BASE_URL}/verify-otp`,
         { email, otp },
         { withCredentials: true } // ✅ important for cookie
       );
@@ -36,25 +37,27 @@ export default function VerifyOtp() {
       // OTP verified successfully
       localStorage.removeItem("signupEmail");
       // router.push("/"); // token cookie is already set by backend
-      if(role === "student") {
+      if (role === "student") {
         router.push("/student/dashboard");
-      }   else if(role === "company") {
+      } else if (role === "company") {
         router.push("/company/dashboard");
       }
-
     } catch (err) {
       setMsg(err.response?.data?.error || "Verification failed");
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ maxWidth: 400, margin: "2rem auto" }}>
+    <form
+      onSubmit={handleSubmit}
+      style={{ maxWidth: 400, margin: "2rem auto" }}
+    >
       <h2>Verify OTP</h2>
       <input
         name="otp"
         placeholder="Enter OTP"
         value={otp}
-        onChange={e => setOtp(e.target.value)}
+        onChange={(e) => setOtp(e.target.value)}
         required
       />
       <button type="submit">Verify</button>
