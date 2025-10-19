@@ -6,10 +6,7 @@ import Link from "next/link";
 import Cookies from "js-cookie";
 import { GoogleLogin } from "@react-oauth/google";
 import SharedFields from "../../../components/SharedFields";
-import {
-  Typography,
-  
-} from "@mui/material";
+import { Typography } from "@mui/material";
 import AuthCard from "../../../components/AuthCard";
 
 export default function Login() {
@@ -20,7 +17,7 @@ export default function Login() {
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
-const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setMsg("");
 
@@ -32,11 +29,11 @@ const handleSubmit = async (e) => {
       );
 
       setMsg(res.data.message);
-      const {user, token} = res.data;
+      const { user, token } = res.data;
       const role = user.role;
       console.log("Login response:", role); // Debugging line
       console.log("Login response token:", token); // Debugging line
-      
+
       if (token) {
         // Store token in cookie instead of localStorage
         Cookies.set("token", token, {
@@ -45,13 +42,12 @@ const handleSubmit = async (e) => {
           sameSite: "Strict",
         });
         // router.push("/");
-        if(role === "student") {
-        router.push("/student/dashboard");
-      } else if(role === "company") {
-        router.push("/company/dashboard");
+        if (role === "student") {
+          router.push("/student/dashboard");
+        } else if (role === "company") {
+          router.push("/company/dashboard");
+        }
       }
-      }
-      
     } catch (err) {
       setMsg(err.response?.data?.error || "Login failed");
     }
@@ -66,7 +62,7 @@ const handleSubmit = async (e) => {
       );
 
       setMsg(res.data.message);
-      const {user, token} = res.data;
+      const { user, token } = res.data;
       const role = user.role;
       if (token) {
         console.log("Google login response:", token); // Debugging line
@@ -76,21 +72,19 @@ const handleSubmit = async (e) => {
           sameSite: "Strict",
         });
         // router.push("/home");
-        if(role === "student") {
+        if (role === "student") {
           router.push("/student/dashboard");
-        } else if(role === "company") {
+        } else if (role === "company") {
           router.push("/company/dashboard");
         }
-        console.log("Google login successful, token stored in cookie"); 
+        console.log("Google login successful, token stored in cookie");
       }
     } catch (err) {
       setMsg(err.response?.data?.error || "Google signup failed");
     }
   };
 
-
   return (
-
     <AuthCard
       title="Log in"
       fields={
@@ -107,16 +101,21 @@ const handleSubmit = async (e) => {
         />
       }
       bottomText={
-        <Typography align="center" variant="body2" sx={{ mt: 3, color: "#aaa" }}>
+        <Typography
+          align="center"
+          variant="body2"
+          sx={{ mt: 3, color: "#aaa" }}
+        >
           Don’t have an account?{" "}
-          <Link href="/signup" style={{ color: "#1976d2", textDecoration: "none" }}>
+          <Link
+            href="/signup"
+            style={{ color: "#2a3b91", textDecoration: "none" }}
+          >
             Sign up
           </Link>
         </Typography>
       }
       msg={msg}
     />
-  
-
   );
 }
