@@ -106,7 +106,8 @@ export default function Signup() {
           <SharedFields form={form} handleChange={handleChange} />
 
           <FormControl fullWidth margin="normal">
-            <InputLabel id="role-label" sx={{ color: "#000" }}>
+
+            <InputLabel id="role-label" sx={{ color: "#000000ff" }}>
               Role
             </InputLabel>
             <Select
