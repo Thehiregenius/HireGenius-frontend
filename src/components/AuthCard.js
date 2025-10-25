@@ -22,11 +22,11 @@ export default function AuthCard({
     
     <Box
     sx={{
-        width: { xs: "0", md: "50%", lg: "60%" },
+        width: { xs: "100%", sm: "70%", md: "80%", lg: "60%" },
         margin: "auto",
         minHeight: "80vh",
         display: "flex",
-        flexDirection: { xs: "column", md: "row" },
+        // flexDirection: {  md: "row" },
         boxShadow: "0px 0px 2px rgba(0, 0, 0.1, 0.2)",
         borderRadius: "300px",
         color: "#000"
@@ -35,7 +35,7 @@ export default function AuthCard({
         sx={{
           // bgcolor: "#2A3B93",
           color: "#fff",
-          display: { xs: "none", md: "flex" },
+          display: { xs: "none", sm: "none", md: "flex" },
           width: "100%",
           flexDirection: "column",
           justifyContent: "center",
@@ -54,20 +54,22 @@ export default function AuthCard({
         <Card
           sx={{
             width: "100%",
-            maxWidth: 400,
+            // maxWidth: 400,
+            height: { xs: "100vh", sm: "auto" },
             background: "#fff",
             color: "#000",
             p: 1,
-            "@media (max-width:600px)": {
-              maxWidth: "100vw",
-              minHeight: "100vh",
-              borderRadius: 0,
-              p: 0.5,
-              boxShadow: "none",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-            },
+            borderRadius:0,
+            // "@media (max-width:600px)": {
+            //   maxWidth: "100vw",
+            //   minHeight: "100vh",
+            //   borderRadius: 0,
+            //   p: 0.5,
+            //   boxShadow: "none",
+            //   // display: "flex",
+            //   // flexDirection: "column",
+            //   justifyContent: "center",
+            // },
           }}
         >
           <CardContent>
@@ -75,7 +77,7 @@ export default function AuthCard({
               <Typography
                 variant="h4"
                 align="center"
-                sx={{ mb: 0.5, fontWeight: "bold", color: "#000" }}
+                sx={{ mb: 0.5,  fontWeight: "bold", color: "#000"}}
               >
                 {title}
               </Typography>

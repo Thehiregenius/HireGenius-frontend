@@ -98,7 +98,7 @@ const handleSubmit = async e => {
           <SharedFields form={form} handleChange={handleChange} />
       
           <FormControl fullWidth margin="normal">
-            <InputLabel id="role-label" sx={{ color: "#eee" }}>
+            <InputLabel id="role-label" sx={{ color: "#000000ff" }}>
               Role
             </InputLabel>
             <Select

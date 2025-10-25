@@ -11,7 +11,7 @@ export function middleware(req) {
 
 
   // Protected routes
-  const protectedRoutes = ["/home", "/"];
+  const protectedRoutes = ["/home", "/", "/company", "/student"];
 
   // If accessing protected route without token → redirect to signup
    if (protectedRoutes.some((path) => url === path || url.startsWith(path + "/")) && !token) {
@@ -50,6 +50,8 @@ export const config = {
     "/home/:path*",
     "/login",
     "/signup",
-    "/"
+    "/",
+    "/company/:path*",
+    "/student/:path*",
   ],
 };
