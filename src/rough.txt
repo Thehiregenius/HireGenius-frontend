@@ -427,3 +427,274 @@ export default function Login() {
     </Box>
   );
 }
+------------------------------------------------------------------------------------------
+// backend/workers/crawlerWorker.js
+require("dotenv").config();
+const crawlQueue = require("../utils/bull");
+const StudentProfile = require("../models/StudentProfile");
+const CrawlJob = require("../models/CrawlJob");
+const axios = require("axios");
+const cheerio = require("cheerio");
+require("../config/db"); // This will connect to MongoDB
+
+// Process crawl jobs
+crawlQueue.process(async (job) => {
+  // const { studentProfileId, githubUrl, linkedinUrl, crawlJobId } = job.data;
+  const { studentProfileId, githubUrl, crawlJobId } = job.data;
+
+  try {
+    await CrawlJob.findByIdAndUpdate(crawlJobId, { status: "processing" });
+
+    const githubData = await fetchGithubData(githubUrl);
+    // const linkedinData = await fetchLinkedinData(linkedinUrl);
+
+    await StudentProfile.findByIdAndUpdate(studentProfileId, {
+      // rawData: { github: githubData, linkedin: linkedinData },
+      rawData: { github: githubData },
+    });
+
+    await CrawlJob.findByIdAndUpdate(crawlJobId, { status: "completed" });
+  } catch (err) {
+    await CrawlJob.findByIdAndUpdate(crawlJobId, {
+      status: "failed",
+      $push: { errorMessages: err.message },
+    });
+    throw err;
+  }
+});
+
+// --- Helper Functions (basic mock for now) ---
+
+async function fetchGithubData(url) {
+  try {
+    const username = url.split("github.com/")[1];
+    const { data } = await axios.get(`https://api.github.com/users/${username}`, {
+      headers: {
+        Authorization: `token ${process.env.GITHUB_TOKEN}`,
+      },
+    });
+
+    return {
+      username: data.login,
+      name: data.name,
+      bio: data.bio,
+      public_repos: data.public_repos,
+      followers: data.followers,
+      following: data.following,
+    };
+  } catch (err) {
+    throw new Error("Failed to fetch GitHub data: " + err.message);
+  }
+}
+
+// const puppeteer = require("puppeteer");
+
+// async function fetchLinkedinData(url) {
+//   try {
+//     const browser = await puppeteer.launch({ headless: false });
+//     const page = await browser.newPage();
+
+//     // Login
+//     await page.goto("https://www.linkedin.com/login", { waitUntil: "networkidle2", timeout: 60000 });
+//     await page.type("#username", process.env.LINKEDIN_EMAIL, { delay: 50 });
+//     await page.type("#password", process.env.LINKEDIN_PASSWORD, { delay: 50 });
+//     await page.click("button[type='submit']");
+//     await page.waitForNavigation();
+
+
+//     // Go to profile page
+//     await page.goto(url, { waitUntil: "networkidle2" });
+
+//     // Example: scrape profile name & headline
+//     const profileData = await page.evaluate(() => {
+//       const name = document.querySelector("h1")?.innerText || "";
+//       const headline = document.querySelector(".text-body-medium")?.innerText || "";
+//       return { name, headline };
+//     });
+
+//     await browser.close();
+//     return profileData;
+//   } catch (err) {
+//     throw new Error("Failed to fetch LinkedIn data: " + err.message);
+//   }
+// }
+
+// const puppeteer = require("puppeteer-extra");
+// const StealthPlugin = require("puppeteer-extra-plugin-stealth");
+
+// puppeteer.use(StealthPlugin());
+
+// async function fetchLinkedinData(url) {
+//   try {
+//     const browser = await puppeteer.launch({
+//       headless: true,
+//       args: ["--no-sandbox", "--disable-setuid-sandbox"],
+//     });
+//     const page = await browser.newPage();
+
+//     await page.goto("https://www.linkedin.com/login", { waitUntil: "networkidle2" });
+
+//     await page.type("#username", process.env.LINKEDIN_EMAIL, { delay: 100 });
+//     await page.type("#password", process.env.LINKEDIN_PASSWORD, { delay: 100 });
+//     await page.click("button[type='submit']");
+//     await page.waitForNavigation({ waitUntil: "networkidle2" });
+
+//     // Small delay to look "human"
+//     await page.waitForTimeout(3000);
+
+//     await page.goto(url, { waitUntil: "networkidle2" });
+
+//     const data = await page.evaluate(() => {
+//       const name = document.querySelector("h1")?.innerText || "";
+//       const headline = document.querySelector(".text-body-medium")?.innerText || "";
+//       const about = document.querySelector(".display-flex.ph5.pv3 span")?.innerText || "";
+//       return { name, headline, about };
+//     });
+
+//     await browser.close();
+//     return data;
+//   } catch (err) {
+//     throw new Error("Failed to fetch LinkedIn data: " + err.message);
+//   }
+// }
+
+
+========================================================================================================================
+
+// ...existing code...
+require("dotenv").config();
+const puppeteer = require("puppeteer-extra");
+const StealthPlugin = require("puppeteer-extra-plugin-stealth");
+puppeteer.use(StealthPlugin());
+
+const MAX_ATTEMPTS = 2;
+
+/**
+ * Random delay helper
+ * @param {number} min 
+ * @param {number} max 
+ */
+function randomDelay(min = 500, max = 1500) {
+  const delay = Math.floor(Math.random() * (max - min + 1) + min);
+  return new Promise(resolve => setTimeout(resolve, delay));
+}
+
+/**
+ * Test LinkedIn login
+ * @returns {Promise<Object>} - { success: boolean, message: string }
+ */
+async function testLinkedInLogin() {
+  const email = process.env.LINKEDIN_EMAIL;
+  const password = process.env.LINKEDIN_PASSWORD;
+
+  if (!email || !password) {
+    throw new Error("LinkedIn credentials not set in .env");
+  }
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    let browser;
+    let page;
+    try {
+      const chromePath = process.env.CHROME_PATH || undefined;
+      browser = await puppeteer.launch({
+        headless: false, // set false to see the browser
+        devtools: !!process.env.OPEN_DEVTOOLS,
+        slowMo: parseInt(process.env.SLOW_MO) || 0,
+        args: ["--no-sandbox", "--disable-setuid-sandbox", "--start-maximized"],
+        defaultViewport: null,
+        executablePath: chromePath
+      });
+
+      page = await browser.newPage();
+
+      // forward page console/errors to Node console so you can see browser logs
+      page.on("console", msg => console.log("PAGE_LOG:", msg.text()));
+      page.on("pageerror", err => console.error("PAGE_ERROR:", err.toString()));
+      page.on("response", res => {
+        const status = res.status();
+        if (status >= 400) console.warn("PAGE_RESPONSE_ERROR:", status, res.url());
+      });
+
+      // set user agent & viewport
+      await page.setUserAgent(
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+      );
+      await page.setViewport({ width: 1366, height: 768 });
+
+      // navigate to login page
+      await page.goto("https://www.linkedin.com/login", { waitUntil: "networkidle2", timeout: 60000 });
+      await randomDelay();
+
+      // ensure input fields present
+      await page.waitForSelector("#username", { timeout: 15000 });
+      await page.waitForSelector("#password", { timeout: 15000 });
+
+      // type credentials
+      await page.type("#username", email, { delay: Math.floor(Math.random() * 50) + 50 });
+      await page.type("#password", password, { delay: Math.floor(Math.random() * 50) + 50 });
+      await randomDelay();
+
+      // click submit and wait for either navigation or a logged-in selector
+      await Promise.all([
+        page.click("button[type='submit']"),
+        Promise.race([
+          page.waitForNavigation({ waitUntil: "networkidle2", timeout: 60000 }).catch(() => null),
+          page.waitForSelector('input[role="combobox"], nav[aria-label="Main"], .search-global-typeahead__input', { timeout: 60000 }).catch(() => null)
+        ])
+      ]);
+
+      await randomDelay();
+
+      // check for immediate login error messages
+      const loginError = await page.$(".alert.error, .form__error, .signin-form__error, .login__error");
+      if (loginError) {
+        try { await page.screenshot({ path: "linkedin-login-failed-error-message.png", fullPage: true }); } catch (_) {}
+        await browser.close();
+        return { success: false, message: "Login failed. Check your credentials or LinkedIn displayed an error." };
+      }
+
+      // final verification after waits
+      const currentUrl = page.url();
+      const loggedInSelector = await page.$('input[role="combobox"], nav[aria-label="Main"], .search-global-typeahead__input');
+      const loggedIn = currentUrl.includes("/feed") || !!loggedInSelector;
+
+      // save a screenshot for debugging
+      try { await page.screenshot({ path: loggedIn ? "linkedin-login-success.png" : "linkedin-login-failed.png", fullPage: true }); } catch (e) {}
+
+      if (loggedIn) {
+        console.log("LinkedIn appears logged in. URL:", currentUrl);
+        if (process.env.KEEP_BROWSER_OPEN === "1") {
+          console.log("KEEP_BROWSER_OPEN=1, leaving browser open for inspection.");
+          return { success: true, message: "Login successful (browser left open)." };
+        }
+        await browser.close();
+        return { success: true, message: "Login successful!" };
+      } else {
+        if (browser) await browser.close();
+        if (attempt < MAX_ATTEMPTS) {
+          await randomDelay(2000, 4000);
+          continue;
+        } else {
+          return { success: false, message: "Login failed. Could not confirm profile access." };
+        }
+      }
+    } catch (err) {
+      // capture page screenshot before closing for debugging
+      try { if (page) await page.screenshot({ path: "linkedin-login-exception.png", fullPage: true }); } catch (_) {}
+      if (browser) {
+        try { await browser.close(); } catch (_) {}
+      }
+      if (attempt >= MAX_ATTEMPTS) {
+        return { success: false, message: "Error during login: " + err.message };
+      }
+      // small delay before retry
+      await randomDelay(2000, 4000);
+    }
+  }
+
+  // fallback (shouldn't be reached)
+  return { success: false, message: "Login failed after retries." };
+}
+
+module.exports = { testLinkedInLogin };
+// ...existing code...
