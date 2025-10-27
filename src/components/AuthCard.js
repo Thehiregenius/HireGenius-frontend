@@ -1,12 +1,4 @@
-import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  Button,
-  Divider,
-  Stack,
-} from "@mui/material";
+import { Box, Card, CardContent, Typography, Button, Divider, Stack } from "@mui/material";
 
 export default function AuthCard({
   title,
@@ -16,14 +8,14 @@ export default function AuthCard({
   googleHandler,
   bottomText,
   msg,
-  children,
+  children, // for extra custom content if needed
 }) {
+  
   return (
     <Box
-      sx={{
+    sx={{
         minHeight: "100vh",
         display: "flex",
-
         background: "radial-gradient(circle at top, #FBFBFB, #ECECEC,rgb(254, 252, 252),rgb(219, 222, 236), #C5CAE0)",     
         color: "#000", 
       }}>
@@ -55,32 +47,10 @@ export default function AuthCard({
           #2A3B93
         `,
           backgroundSize: "100% 30px",
-
- 
         }}
       >
-        <Box
-          sx={{
-            color: "#fff",
-            display: { xs: "none", md: "flex" },
-            width: "100%",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
-            p: 3,
-            background: `
-              url("data:image/svg+xml;utf8,<svg width='400' height='40' xmlns='http://www.w3.org/2000/svg'><path d='M0 20 Q 50 0, 100 25 T 200 18 T 300 20 T 400 20' stroke='white' stroke-width='2' fill='none' opacity='0.15'/></svg>")
-              repeat-y,
-              #2A3B93
-            `,
-            backgroundSize: "100% 30px",
-            textAlign: "center",
-          }}
-        >
-          HireGenius helps you create a stunning portfolio in seconds — just
-          connect your GitHub and LinkedIn. Compete in challenges, grow your
-          rank, and get noticed by top companies looking for real talent.
-        </Box>
+      Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.
+      </Box>
         <Card
           sx={{
             width: "100%",
@@ -89,7 +59,6 @@ export default function AuthCard({
             background: "#fff",
             color: "#000",
             p: 1,
-
             borderRadius:0,
             // "@media (max-width:600px)": {
             //   maxWidth: "100vw",
@@ -101,10 +70,6 @@ export default function AuthCard({
             //   // flexDirection: "column",
             //   justifyContent: "center",
             // },
-
-            borderRadius: 0,
-            boxShadow: "none",
-
           }}
         >
           <CardContent>
@@ -117,9 +82,8 @@ export default function AuthCard({
                 {title}
               </Typography>
             )}
-            <Typography align="center" sx={{ mb: 2, mt: 2, color: "#000" }}>
-              Welcome
-            </Typography>
+            <Typography align="center" sx={{ mb: 2, color: "#000" }}>Welcome</Typography>
+            <Typography>Let's {title} to your account</Typography>
             <form onSubmit={onSubmit}>
               {fields}
 
@@ -130,15 +94,11 @@ export default function AuthCard({
                 sx={{
                   mt: 1.5,
                   py: 0.7,
-                  borderRadius: "4px",
-                  backgroundColor: "#2a3b91",
+                  borderRadius: "12px",
+                  backgroundColor: "#1976d2",
                   fontWeight: "bold",
                   textTransform: "none",
-                  "&:hover": {
-                    backgroundColor: "#2a3b91",
-                    // outline: "1px solid white",
-                    transform: "scale(1.005)",
-                  },
+                  "&:hover": { backgroundColor: "#1565c0" },
                 }}
               >
                 {buttonText}
@@ -159,7 +119,8 @@ export default function AuthCard({
             {children}
           </CardContent>
         </Card>
-      </Box>
+      
+    </Box>
     </Box>
   );
 }
