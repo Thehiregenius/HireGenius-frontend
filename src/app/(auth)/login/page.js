@@ -8,6 +8,7 @@ import { GoogleLogin } from "@react-oauth/google";
 import SharedFields from "../../../components/SharedFields";
 import { Typography } from "@mui/material";
 import AuthCard from "../../../components/AuthCard";
+import { BASE_URL } from "@/configs/constants";
 
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -23,7 +24,7 @@ export default function Login() {
 
     try {
       const res = await axios.post(
-        "http://localhost:5000/login",
+        `${BASE_URL}/login`,
         form,
         { withCredentials: true } // important for cookies
       );
