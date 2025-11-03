@@ -14,6 +14,7 @@ export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [msg, setMsg] = useState("");
   const router = useRouter();
+  
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -57,7 +58,7 @@ export default function Login() {
   const handleGoogleLogin = async (credentialResponse) => {
     try {
       const res = await axios.post(
-        "http://localhost:5000/google-login",
+        `${BASE_URL}/google-login`,
         { tokenId: credentialResponse.credential },
         { withCredentials: true }
       );
