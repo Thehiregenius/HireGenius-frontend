@@ -12,7 +12,6 @@ import {
   Alert,
   Divider,
 } from "@mui/material";
-import { getTokenFromCookie } from "../../../../lib/auth";
 import { BASE_URL } from "@/configs/constants";
 import axios from "axios";
 
@@ -29,21 +28,13 @@ export default function ProfilePage() {
   });
   const [origProfile, setOrigProfile] = useState(null);
   const [snack, setSnack] = useState({ open: false, severity: "info", message: "" });
-
   useEffect(() => {
     let mounted = true;
     async function load() {
       setLoading(true);
       try {
-        const token = getTokenFromCookie();
-        console.log(token);
-        console.log('Auth Token:', token?.slice(0, 20) + '...'); // Log partial token for debugging
-        const headers = token ? { Authorization: `Bearer ${token}` } : {};
-        console.log('Request Headers:', headers);
-        const res = await axios.get(`${BASE_URL}/profile`, {
-          headers,
-          withCredentials: true,
-        });
+        // Backend reads the httpOnly token cookie; send credentials
+        const res = await axios.get(`${BASE_URL}/profile`, { withCredentials: true });
         const data = res.data;
         if (!mounted) return;
         const p = {
@@ -58,10 +49,10 @@ export default function ProfilePage() {
         setOrigProfile(p);
       } catch (err) {
         console.error("Load profile error:", err);
-        console.log('Error response:', {
+        console.log("Error response:", {
           status: err.response?.status,
           data: err.response?.data,
-          headers: err.response?.headers
+          headers: err.response?.headers,
         });
         setSnack({ open: true, severity: "error", message: err.response?.data?.error || "Unable to load profile" });
       } finally {
@@ -97,8 +88,7 @@ export default function ProfilePage() {
     }
     setSaving(true);
     try {
-      const token = getTokenFromCookie();
-      const headers = { ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+      // Rely on httpOnly cookie for auth; send credentials
       const res = await axios.patch(
         `${BASE_URL}/profile`,
         {
@@ -107,10 +97,7 @@ export default function ProfilePage() {
           githubUrl: profile.githubUrl,
           linkedinUrl: profile.linkedinUrl,
         },
-        {
-          headers,
-          withCredentials: true,
-        }
+        { withCredentials: true }
       );
       const data = res.data;
       setSnack({ open: true, severity: "success", message: "Profile saved" });
@@ -133,12 +120,7 @@ export default function ProfilePage() {
   async function reloadProfile() {
     setLoading(true);
     try {
-      const token = getTokenFromCookie();
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const res = await axios.get(`${BASE_URL}/profile`, {
-        headers,
-        withCredentials: true,
-      });
+      const res = await axios.get(`${BASE_URL}/profile`, { withCredentials: true });
       const data = res.data;
       const p = {
         name: data.name || "",
