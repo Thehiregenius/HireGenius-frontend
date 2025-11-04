@@ -1,81 +1,118 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import { BASE_URL } from "../../../configs/constants";
+import Link from "next/link";
+import Cookies from "js-cookie";
+import { GoogleLogin } from "@react-oauth/google";
+import SharedFields from "../../../components/SharedFields";
+import { Typography } from "@mui/material";
+import AuthCard from "../../../components/AuthCard";
+import { BASE_URL } from "@/configs/constants";
 
-export default function VerifyOtp() {
-  const [otp, setOtp] = useState("");
+export default function Login() {
+  const [form, setForm] = useState({ email: "", password: "" });
   const [msg, setMsg] = useState("");
-  const [email, setEmail] = useState("");
   const router = useRouter();
 
-  // ✅ Get stored email from localStorage (from signup step)
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const storedEmail = localStorage.getItem("signupEmail");
-      if (!storedEmail) {
-        router.replace("/signup"); // redirect if no email found
-      } else {
-        setEmail(storedEmail);
-      }
-    }
-  }, [router]);
+  const handleChange = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
 
-  // ✅ Submit OTP verification
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMsg("");
 
     try {
+      const res = await axios.post(`${BASE_URL}/login`, form);
+
+      setMsg(res.data.message);
+      const { user, token } = res.data;
+      const role = user.role;
+      console.log("Login response:", role); // Debugging line
+      console.log("Login response token:", token); // Debugging line
+
+      if (token) {
+        // Store token in cookie instead of localStorage
+        Cookies.set("token", token, {
+          expires: 7, // expires in 7 days
+          secure: true,
+          sameSite: "Strict",
+        });
+        // router.push("/");
+        if (role === "student") {
+          router.push("/student/dashboard");
+        } else if (role === "company") {
+          router.push("/company/dashboard");
+        }
+      }
+    } catch (err) {
+      setMsg(err.response?.data?.error || "Login failed");
+    }
+  };
+
+  const handleGoogleLogin = async (credentialResponse) => {
+    try {
       const res = await axios.post(
-        `${BASE_URL}/verify-otp`,
-        { email, otp },
-        { withCredentials: true } // ✅ ensures cookie (token) is included
+        "http://localhost:5000/google-login",
+        { tokenId: credentialResponse.credential },
+        { withCredentials: true }
       );
 
       setMsg(res.data.message);
-
-      const role = res.data.user?.role;
-      console.log("✅ OTP verified. Role:", role);
-
-      // Clear temporary email
-      localStorage.removeItem("signupEmail");
-
-      // ✅ No need to handle token — it's already in cookie
-      if (role === "student") {
-        router.push("/student/dashboard");
-      } else if (role === "company") {
-        router.push("/company/dashboard");
-      } else {
-        router.push("/"); // fallback
+      const { user, token } = res.data;
+      const role = user.role;
+      if (token) {
+        console.log("Google login response:", token); // Debugging line
+        Cookies.set("token", token, {
+          expires: 7,
+          secure: true,
+          sameSite: "Strict",
+        });
+        // router.push("/home");
+        if (role === "student") {
+          router.push("/student/dashboard");
+        } else if (role === "company") {
+          router.push("/company/dashboard");
+        }
+        console.log("Google login successful, token stored in cookie");
       }
-
     } catch (err) {
-      console.error("❌ OTP verification error:", err);
-      setMsg(err.response?.data?.error || "Verification failed");
+      setMsg(err.response?.data?.error || "Google signup failed");
     }
   };
 
   return (
-    <form
+    <AuthCard
+      title="Log in"
+      fields={
+        <>
+          <SharedFields form={form} handleChange={handleChange} />
+        </>
+      }
       onSubmit={handleSubmit}
-      style={{ maxWidth: 400, margin: "2rem auto", display: "flex", flexDirection: "column", gap: "1rem" }}
-    >
-      <h2>Verify OTP</h2>
-
-      <input
-        type="text"
-        name="otp"
-        placeholder="Enter OTP"
-        value={otp}
-        onChange={(e) => setOtp(e.target.value)}
-        required
-      />
-
-      <button type="submit">Verify</button>
-
-      {msg && <div>{msg}</div>}
-    </form>
+      buttonText="Log in"
+      googleHandler={
+        <GoogleLogin
+          onSuccess={handleGoogleLogin}
+          onError={() => setMsg("Google signup failed")}
+        />
+      }
+      bottomText={
+        <Typography
+          align="center"
+          variant="body2"
+          sx={{ mt: 3, color: "#aaa" }}
+        >
+          Don’t have an account?{" "}
+          <Link
+            href="/signup"
+            style={{ color: "#2a3b91", textDecoration: "none" }}
+          >
+            Sign up
+          </Link>
+        </Typography>
+      }
+      msg={msg}
+    />
   );
 }
