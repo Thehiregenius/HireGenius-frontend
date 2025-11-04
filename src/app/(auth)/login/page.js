@@ -23,7 +23,7 @@ export default function Login() {
     setMsg("");
 
     try {
-      const res = await axios.post(`${BASE_URL}/login`, form);
+  const res = await axios.post(`${BASE_URL}/login`, form);
 
       setMsg(res.data.message);
       const { user, token } = res.data;
@@ -53,7 +53,7 @@ export default function Login() {
   const handleGoogleLogin = async (credentialResponse) => {
     try {
       const res = await axios.post(
-        "http://localhost:5000/google-login",
+        `${BASE_URL}/google-login`,
         { tokenId: credentialResponse.credential },
         { withCredentials: true }
       );
