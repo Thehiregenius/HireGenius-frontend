@@ -1,22 +1,11 @@
 // ...existing code...
 "use client";
-import React, { useEffect, useState, useRef } from "react";
-import {
-  Box,
-  Grid,
-  Avatar,
-  TextField,
-  Button,
-  Typography,
-  CircularProgress,
-  Snackbar,
-  Alert,
-  Divider,
-  IconButton,
-  Badge,
-} from "@mui/material";
-import EditIcon from "@mui/icons-material/Edit";
-import api from "@/lib/apiClient";
+import React, { useEffect, useState } from "react";
+import { Box, Grid, Typography, CircularProgress } from "@mui/material";
+import api from "@/lib/api";
+import AvatarUpload from "@/components/AvatarUpload";
+import ProfileForm from "@/components/ProfileForm";
+import Notification from "@/components/Notification";
 
 export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
@@ -35,8 +24,6 @@ export default function ProfilePage() {
     severity: "info",
     message: "",
   });
-
-  const fileInputRef = useRef(null);
 
   useEffect(() => {
     let mounted = true;
@@ -86,6 +73,49 @@ export default function ProfilePage() {
       profile.githubUrl !== origProfile.githubUrl ||
       profile.linkedinUrl !== origProfile.linkedinUrl
     );
+  }
+
+  async function handleAvatarUpload(file) {
+    const previewUrl = URL.createObjectURL(file);
+    setProfile((p) => ({ ...p, avatar: previewUrl }));
+
+    try {
+      setSaving(true);
+      const data = await api.profile.updateAvatar({
+        file,
+        name: profile.name,
+        githubUrl: profile.githubUrl,
+        linkedinUrl: profile.linkedinUrl
+      });
+
+      if (data?.profile) {
+        setProfile(data.profile);
+        setOrigProfile(data.profile);
+        setSnack({ open: true, severity: "success", message: "Avatar uploaded" });
+      } else if (data?.avatar) {
+        const updatedProfile = { ...profile, avatar: data.avatar };
+        setProfile(updatedProfile);
+        setOrigProfile(updatedProfile);
+        setSnack({ open: true, severity: "success", message: "Avatar uploaded" });
+      } else {
+        await reloadProfile();
+      }
+    } catch (err) {
+      console.error("Avatar upload error:", err);
+      setSnack({
+        open: true,
+        severity: "error",
+        message: err.response?.data?.error || "Avatar upload failed",
+      });
+      setProfile((p) => ({ ...p, avatar: origProfile?.avatar || "" }));
+    } finally {
+      setSaving(false);
+      try { URL.revokeObjectURL(previewUrl); } catch (_) {}
+    }
+  }
+
+  function handleRemoveAvatar() {
+    setProfile((p) => ({ ...p, avatar: "" }));
   }
 
   async function handleSave(e) {
@@ -230,151 +260,34 @@ export default function ProfilePage() {
         Your Profile
       </Typography>
 
-      <Box component="form" onSubmit={handleSave}>
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={4}>
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 2,
-              }}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/png, image/jpeg"
-                style={{ display: "none" }}
-                onChange={handleFileChange}
-              />
-
-              <Badge
-                overlap="circular"
-                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-                badgeContent={
-                  <IconButton
-                    size="small"
-                    onClick={handleAvatarClick}
-                    sx={{ bgcolor: "background.paper", boxShadow: 1 }}
-                    aria-label="edit avatar"
-                  >
-                    <EditIcon fontSize="small" />
-                  </IconButton>
-                }
-              >
-                <Avatar
-                  src={profile.avatar || undefined}
-                  alt={profile.name || "Avatar"}
-                  sx={{ width: 140, height: 140 }}
-                >
-                  {!profile.avatar && (profile.name ? profile.name.charAt(0).toUpperCase() : "A")}
-                </Avatar>
-              </Badge>
-
-              {/* keep remove button if you want user to clear avatar */}
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={() => {
-                  setProfile((p) => ({ ...p, avatar: "" }));
-                }}
-              >
-                Remove Avatar
-              </Button>
-            </Box>
-          </Grid>
-
-          <Grid item xs={12} md={8}>
-            <TextField
-              label="Name"
-              name="name"
-              value={profile.name}
-              onChange={handleChange}
-              fullWidth
-              required
-              margin="normal"
-            />
-
-            <TextField
-              label="Email"
-              value={profile.email}
-              fullWidth
-              margin="normal"
-              InputProps={{ readOnly: true }}
-            />
-
-            <TextField
-              label="Role"
-              value={profile.role}
-              fullWidth
-              margin="normal"
-              InputProps={{ readOnly: true }}
-            />
-
-            <Divider sx={{ my: 2 }} />
-
-            <TextField
-              label="GitHub URL"
-              name="githubUrl"
-              value={profile.githubUrl}
-              onChange={handleChange}
-              fullWidth
-              margin="normal"
-              placeholder="https://github.com/username"
-            />
-
-            <TextField
-              label="LinkedIn URL"
-              name="linkedinUrl"
-              value={profile.linkedinUrl}
-              onChange={handleChange}
-              fullWidth
-              margin="normal"
-              placeholder="https://linkedin.com/in/username"
-            />
-
-            <Box sx={{ display: "flex", gap: 2, mt: 3 }}>
-              <Button type="submit" variant="contained" disabled={saving || !isDirty()}>
-                {saving ? "Saving..." : "Save changes"}
-              </Button>
-
-              <Button
-                variant="outlined"
-                onClick={() => {
-                  if (origProfile) setProfile(origProfile);
-                  setSnack({
-                    open: true,
-                    severity: "info",
-                    message: "Reverted changes",
-                  });
-                }}
-              >
-                Revert
-              </Button>
-
-              <Button color="inherit" onClick={reloadProfile}>
-                Reload
-              </Button>
-            </Box>
-          </Grid>
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={4}>
+          <AvatarUpload
+            avatar={profile.avatar}
+            name={profile.name}
+            onUpload={handleAvatarUpload}
+            onRemove={handleRemoveAvatar}
+            isLoading={saving}
+          />
         </Grid>
-      </Box>
 
-      <Snackbar
+        <Grid item xs={12} md={8}>
+          <ProfileForm
+            profile={profile}
+            isDirty={isDirty()}
+            isSaving={saving}
+            onFieldChange={handleChange}
+            onSave={handleSave}
+          />
+        </Grid>
+      </Grid>
+
+      <Notification
         open={snack.open}
-        autoHideDuration={3000}
+        severity={snack.severity}
+        message={snack.message}
         onClose={() => setSnack((s) => ({ ...s, open: false }))}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert
-          onClose={() => setSnack((s) => ({ ...s, open: false }))}
-          severity={snack.severity}
-          sx={{ width: "100%" }}
-        >
-          {snack.message}
-        </Alert>
-      </Snackbar>
+      />
     </Box>
   );
 }
