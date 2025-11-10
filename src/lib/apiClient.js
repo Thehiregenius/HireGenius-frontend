@@ -7,11 +7,11 @@ import { BASE_URL } from "@/configs/constants";
 const api = axios.create({
   baseURL: BASE_URL,
   withCredentials: true,
-  headers: {
-    Accept: "application/json",
-    "Content-Type": "application/json",
-  },
 });
+
+// Set default headers but allow FormData to override
+api.defaults.headers.common['Accept'] = 'application/json';
+// Don't set Content-Type globally — let axios auto-detect for FormData
 
 // Basic response interceptor: useful place to handle global auth errors
 api.interceptors.response.use(
