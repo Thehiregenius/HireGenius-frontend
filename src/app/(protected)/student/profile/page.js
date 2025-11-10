@@ -16,7 +16,7 @@ import {
   Badge,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
-import api from "@/lib/apiClient";
+import api from "@/lib/api";
 
 export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
@@ -43,8 +43,7 @@ export default function ProfilePage() {
     async function load() {
       setLoading(true);
       try {
-        const res = await api.get(`/profile`);
-        const data = res.data;
+        const data = await api.profile.getProfile();
         if (!mounted) return;
         const p = {
           name: data.name || "",
@@ -100,23 +99,18 @@ export default function ProfilePage() {
     }
     setSaving(true);
     try {
-      // send JSON when not uploading a file
-      const res = await api.patch(`/profile`, {
+      const data = await api.profile.updateProfile({
         name: profile.name,
-        avatar: profile.avatar,
+        avatar: profile.avatar, // Explicitly send avatar (could be empty string to remove)
         githubUrl: profile.githubUrl,
         linkedinUrl: profile.linkedinUrl,
       });
-      const data = res.data;
-      setSnack({ open: true, severity: "success", message: "Profile saved" });
-      const saved = {
-        name: data?.profile?.name ?? profile.name,
-        avatar: data?.profile?.avatar ?? profile.avatar,
-        githubUrl: data?.profile?.githubUrl ?? profile.githubUrl,
-        linkedinUrl: data?.profile?.linkedinUrl ?? profile.linkedinUrl,
-      };
-      setOrigProfile(saved);
-      setProfile((p) => ({ ...p, ...saved }));
+
+      if (data?.profile) {
+        setProfile(data.profile);
+        setOrigProfile(data.profile);
+        setSnack({ open: true, severity: "success", message: "Profile saved" });
+      }
     } catch (err) {
       console.error("Save profile error:", err);
       setSnack({
@@ -132,8 +126,7 @@ export default function ProfilePage() {
   async function reloadProfile() {
     setLoading(true);
     try {
-      const res = await api.get(`/profile`);
-      const data = res.data;
+      const data = await api.profile.getProfile();
       const p = {
         name: data.name || "",
         avatar: data.avatar || "",
@@ -175,31 +168,34 @@ export default function ProfilePage() {
     const previewUrl = URL.createObjectURL(file);
     setProfile((p) => ({ ...p, avatar: previewUrl }));
 
-    // upload via multipart/form-data to /profile (backend must accept multipart)
-    const form = new FormData();
-    form.append("avatar", file);
-    // include other fields optionally if you want server to update them as well
-    form.append("name", profile.name || "");
-    form.append("githubUrl", profile.githubUrl || "");
-    form.append("linkedinUrl", profile.linkedinUrl || "");
-
     try {
       setSaving(true);
-      const res = await api.patch(`/profile`, form, {
-        headers: { "Content-Type": "multipart/form-data" },
+      const data = await api.profile.updateAvatar({
+        file,
+        name: profile.name,
+        githubUrl: profile.githubUrl,
+        linkedinUrl: profile.linkedinUrl
       });
-      const data = res.data;
-      const newAvatar = data?.profile?.avatar ?? data?.avatar ?? null;
-      if (newAvatar) {
-        setProfile((p) => ({ ...p, avatar: newAvatar }));
-        setOrigProfile((o) => (o ? { ...o, avatar: newAvatar } : o));
+      
+      console.log("Avatar upload response:", data); // Debug log
+      
+      if (data?.profile) {
+        console.log("Setting profile from data.profile:", data.profile); // Debug log
+        setProfile(data.profile);
+        setOrigProfile(data.profile);
+        setSnack({ open: true, severity: "success", message: "Avatar uploaded" });
+      } else if (data?.avatar) {
+        console.log("Setting profile with avatar from data.avatar:", data.avatar); // Debug log
+        const updatedProfile = { ...profile, avatar: data.avatar };
+        setProfile(updatedProfile);
+        setOrigProfile(updatedProfile);
         setSnack({ open: true, severity: "success", message: "Avatar uploaded" });
       } else {
-        // If backend didn't return URL, keep preview but notify user
-        setSnack({ open: true, severity: "success", message: "Uploaded — refresh to see change" });
+        console.warn("No profile or avatar in response:", data);
+        setSnack({ open: true, severity: "warning", message: "Avatar uploaded but profile data missing" });
       }
     } catch (err) {
-      console.error("Avatar upload error", err);
+      console.error("Avatar upload error:", err);
       setSnack({
         open: true,
         severity: "error",
@@ -209,9 +205,7 @@ export default function ProfilePage() {
       setProfile((p) => ({ ...p, avatar: origProfile?.avatar || "" }));
     } finally {
       setSaving(false);
-      setTimeout(() => {
-        try { URL.revokeObjectURL(previewUrl); } catch (_) {}
-      }, 5000);
+      try { URL.revokeObjectURL(previewUrl); } catch (_) {}
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }

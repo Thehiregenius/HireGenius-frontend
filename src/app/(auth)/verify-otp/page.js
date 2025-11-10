@@ -1,8 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
-import axios from "axios";
 import { useRouter } from "next/navigation";
-import { BASE_URL } from "../../../configs/constants";
+import api from "@/lib/api";
 
 export default function VerifyOtp() {
   const [otp, setOtp] = useState("");
@@ -24,19 +23,12 @@ export default function VerifyOtp() {
     e.preventDefault();
     setMsg("");
     try {
-      const res = await axios.post(
-        `${BASE_URL}/verify-otp`,
-        { email, otp },
-        { withCredentials: true } // ✅ important for cookie
-      );
+      const res = await api.auth.verifyOtp({ email, otp });
 
-      setMsg(res.data.message);
-      // const role = res.data.role;
-      const role = res.data.user?.role;
-      console.log("OTP Verification response role:", role); // Debugging line
-      // OTP verified successfully
+      setMsg(res.message);
+      const role = res.user?.role;
+      console.log("OTP Verification response role:", role);
       localStorage.removeItem("signupEmail");
-      // router.push("/"); // token cookie is already set by backend
       if (role === "student") {
         router.push("/student/dashboard");
       } else if (role === "company") {

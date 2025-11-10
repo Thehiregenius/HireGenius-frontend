@@ -1,9 +1,7 @@
 "use client";
 import { useState } from "react";
-import axios from "axios";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-// import Cookies from "js-cookie";
 import { GoogleLogin } from "@react-oauth/google";
 import {
   TextField,
@@ -13,11 +11,9 @@ import {
   InputLabel,
   FormControl,
 } from "@mui/material";
-import { BASE_URL } from "../../../configs/constants";
-
 import SharedFields from "../../../components/SharedFields";
-
 import AuthCard from "../../../components/AuthCard";
+import api from "@/lib/api";
 
 export default function Signup() {
   const [form, setForm] = useState({
@@ -36,14 +32,12 @@ export default function Signup() {
     e.preventDefault();
     setMsg("");
     try {
-      const res = await axios.post(`${BASE_URL}/signup`, form, {
-        withCredentials: true, // ✅ Important for cookies
-      });
+      const res = await api.auth.signup(form);
 
-      setMsg(res.data.message);
+      setMsg(res.message);
 
       // OTP flow
-      if (res.data.message?.includes("OTP")) {
+      if (res.message?.includes("OTP")) {
         localStorage.setItem("signupEmail", form.email);
         router.push("/verify-otp");
       }
@@ -54,22 +48,14 @@ export default function Signup() {
 
   const handleGoogleSignup = async (credentialResponse) => {
     try {
-      const res = await axios.post(
-        `${BASE_URL}/google-signup`,
-        {
-          tokenId: credentialResponse.credential,
-        },
-        {
-          withCredentials: true, // ✅ Important for cookies
-        }
-      );
+      const res = await api.auth.googleSignup({
+        tokenId: credentialResponse.credential,
+      });
 
-      setMsg(res.data.message);
+      setMsg(res.message);
 
-      // If backend sent cookie, just redirect to homepage
-      // router.push("/home");
-      const role = res.data.user?.role;
-      console.log("OTP Verification response role:", role); // Debugging line
+      const role = res.user?.role;
+      console.log("OTP Verification response role:", role);
 
       if (role === "student") {
         router.push("/student/dashboard");

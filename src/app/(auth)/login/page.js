@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import axios from "axios";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Cookies from "js-cookie";
@@ -8,7 +7,7 @@ import { GoogleLogin } from "@react-oauth/google";
 import SharedFields from "../../../components/SharedFields";
 import { Typography } from "@mui/material";
 import AuthCard from "../../../components/AuthCard";
-import { BASE_URL } from "@/configs/constants";
+import api from "@/lib/api";
 
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -23,22 +22,20 @@ export default function Login() {
     setMsg("");
 
     try {
-  const res = await axios.post(`${BASE_URL}/login`, form);
+      const res = await api.auth.login(form);
 
-      setMsg(res.data.message);
-      const { user, token } = res.data;
+      setMsg(res.message);
+      const { user, token } = res;
       const role = user.role;
-      console.log("Login response:", role); // Debugging line
-      console.log("Login response token:", token); // Debugging line
+      console.log("Login response:", role);
+      console.log("Login response token:", token);
 
       if (token) {
-        // Store token in cookie instead of localStorage
         Cookies.set("token", token, {
-          expires: 7, // expires in 7 days
+          expires: 7,
           secure: true,
           sameSite: "Strict",
         });
-        // router.push("/");
         if (role === "student") {
           router.push("/student/dashboard");
         } else if (role === "company") {
@@ -52,23 +49,18 @@ export default function Login() {
 
   const handleGoogleLogin = async (credentialResponse) => {
     try {
-      const res = await axios.post(
-        `${BASE_URL}/google-login`,
-        { tokenId: credentialResponse.credential },
-        { withCredentials: true }
-      );
+      const res = await api.auth.googleLogin({ tokenId: credentialResponse.credential });
 
-      setMsg(res.data.message);
-      const { user, token } = res.data;
+      setMsg(res.message);
+      const { user, token } = res;
       const role = user.role;
       if (token) {
-        console.log("Google login response:", token); // Debugging line
+        console.log("Google login response:", token);
         Cookies.set("token", token, {
           expires: 7,
           secure: true,
           sameSite: "Strict",
         });
-        // router.push("/home");
         if (role === "student") {
           router.push("/student/dashboard");
         } else if (role === "company") {
