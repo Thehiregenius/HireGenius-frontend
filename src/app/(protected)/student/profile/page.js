@@ -1,5 +1,6 @@
+// ...existing code...
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   Box,
   Grid,
@@ -11,7 +12,10 @@ import {
   Snackbar,
   Alert,
   Divider,
+  IconButton,
+  Badge,
 } from "@mui/material";
+import EditIcon from "@mui/icons-material/Edit";
 import api from "@/lib/apiClient";
 
 export default function ProfilePage() {
@@ -32,12 +36,13 @@ export default function ProfilePage() {
     message: "",
   });
 
+  const fileInputRef = useRef(null);
+
   useEffect(() => {
     let mounted = true;
     async function load() {
       setLoading(true);
       try {
-        // Backend reads the httpOnly token cookie; api instance includes withCredentials
         const res = await api.get(`/profile`);
         const data = res.data;
         if (!mounted) return;
@@ -53,11 +58,6 @@ export default function ProfilePage() {
         setOrigProfile(p);
       } catch (err) {
         console.error("Load profile error:", err);
-        console.log("Error response:", {
-          status: err.response?.status,
-          data: err.response?.data,
-          headers: err.response?.headers,
-        });
         setSnack({
           open: true,
           severity: "error",
@@ -100,7 +100,7 @@ export default function ProfilePage() {
     }
     setSaving(true);
     try {
-      // Rely on httpOnly cookie for auth; send credentials
+      // send JSON when not uploading a file
       const res = await api.patch(`/profile`, {
         name: profile.name,
         avatar: profile.avatar,
@@ -157,6 +157,65 @@ export default function ProfilePage() {
     }
   }
 
+  function handleAvatarClick() {
+    if (fileInputRef.current) fileInputRef.current.click();
+  }
+
+  async function handleFileChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validTypes = ["image/png", "image/jpeg", "image/jpg"];
+    if (!validTypes.includes(file.type)) {
+      setSnack({ open: true, severity: "warning", message: "Please select PNG or JPG image" });
+      return;
+    }
+
+    // show preview immediately
+    const previewUrl = URL.createObjectURL(file);
+    setProfile((p) => ({ ...p, avatar: previewUrl }));
+
+    // upload via multipart/form-data to /profile (backend must accept multipart)
+    const form = new FormData();
+    form.append("avatar", file);
+    // include other fields optionally if you want server to update them as well
+    form.append("name", profile.name || "");
+    form.append("githubUrl", profile.githubUrl || "");
+    form.append("linkedinUrl", profile.linkedinUrl || "");
+
+    try {
+      setSaving(true);
+      const res = await api.patch(`/profile`, form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const data = res.data;
+      const newAvatar = data?.profile?.avatar ?? data?.avatar ?? null;
+      if (newAvatar) {
+        setProfile((p) => ({ ...p, avatar: newAvatar }));
+        setOrigProfile((o) => (o ? { ...o, avatar: newAvatar } : o));
+        setSnack({ open: true, severity: "success", message: "Avatar uploaded" });
+      } else {
+        // If backend didn't return URL, keep preview but notify user
+        setSnack({ open: true, severity: "success", message: "Uploaded — refresh to see change" });
+      }
+    } catch (err) {
+      console.error("Avatar upload error", err);
+      setSnack({
+        open: true,
+        severity: "error",
+        message: err.response?.data?.error || "Avatar upload failed",
+      });
+      // revert preview
+      setProfile((p) => ({ ...p, avatar: origProfile?.avatar || "" }));
+    } finally {
+      setSaving(false);
+      setTimeout(() => {
+        try { URL.revokeObjectURL(previewUrl); } catch (_) {}
+      }, 5000);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
   if (loading) {
     return (
       <Box sx={{ p: 4, display: "flex", justifyContent: "center" }}>
@@ -182,28 +241,44 @@ export default function ProfilePage() {
                 gap: 2,
               }}
             >
-              <Avatar
-                src={profile.avatar || undefined}
-                alt={profile.name || "Avatar"}
-                sx={{ width: 140, height: 140 }}
-              >
-                {!profile.avatar &&
-                  (profile.name ? profile.name.charAt(0).toUpperCase() : "A")}
-              </Avatar>
-
-              <TextField
-                label="Avatar URL"
-                name="avatar"
-                value={profile.avatar}
-                onChange={handleChange}
-                fullWidth
-                size="small"
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png, image/jpeg"
+                style={{ display: "none" }}
+                onChange={handleFileChange}
               />
 
+              <Badge
+                overlap="circular"
+                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                badgeContent={
+                  <IconButton
+                    size="small"
+                    onClick={handleAvatarClick}
+                    sx={{ bgcolor: "background.paper", boxShadow: 1 }}
+                    aria-label="edit avatar"
+                  >
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                }
+              >
+                <Avatar
+                  src={profile.avatar || undefined}
+                  alt={profile.name || "Avatar"}
+                  sx={{ width: 140, height: 140 }}
+                >
+                  {!profile.avatar && (profile.name ? profile.name.charAt(0).toUpperCase() : "A")}
+                </Avatar>
+              </Badge>
+
+              {/* keep remove button if you want user to clear avatar */}
               <Button
                 variant="outlined"
                 size="small"
-                onClick={() => setProfile((p) => ({ ...p, avatar: "" }))}
+                onClick={() => {
+                  setProfile((p) => ({ ...p, avatar: "" }));
+                }}
               >
                 Remove Avatar
               </Button>
@@ -260,11 +335,7 @@ export default function ProfilePage() {
             />
 
             <Box sx={{ display: "flex", gap: 2, mt: 3 }}>
-              <Button
-                type="submit"
-                variant="contained"
-                disabled={saving || !isDirty()}
-              >
+              <Button type="submit" variant="contained" disabled={saving || !isDirty()}>
                 {saving ? "Saving..." : "Save changes"}
               </Button>
 
