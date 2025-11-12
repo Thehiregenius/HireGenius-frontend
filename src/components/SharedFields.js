@@ -13,7 +13,19 @@ export default function SharedFields({ form, handleChange }) {
         required
         type="email"
         variant="outlined"
-        sx={{ p:0, color: "#000"  }}
+        sx={{
+          p: 0,
+          color: "#000",
+          "& .MuiInputBase-root": {
+            fontSize: { xs: "1.1rem", sm: "1.15rem", md: "1rem" },
+          },
+          "& .MuiInputLabel-root": {
+            fontSize: { xs: "1.1rem", sm: "1.15rem", md: "1rem" },
+          },
+          "& .MuiOutlinedInput-root": {
+            borderRadius: "8px",
+          },
+        }}
       />
       <TextField
         fullWidth
@@ -25,7 +37,18 @@ export default function SharedFields({ form, handleChange }) {
         required
         type="password"
         variant="outlined"
-        sx={{  color: "#000"  }}
+        sx={{
+          color: "#000",
+          "& .MuiInputBase-root": {
+            fontSize: { xs: "1.1rem", sm: "1.15rem", md: "1rem" },
+          },
+          "& .MuiInputLabel-root": {
+            fontSize: { xs: "1.1rem", sm: "1.15rem", md: "1rem" },
+          },
+          "& .MuiOutlinedInput-root": {
+            borderRadius: "8px",
+          },
+        }}
       />
     </>
   );
