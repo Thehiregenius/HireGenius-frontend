@@ -86,9 +86,37 @@ export const authApi = {
 //   }
 // };
 
+// Portfolio APIs
+export const portfolioApi = {
+  // Fetch generated portfolio from database
+  getPortfolio: async () => {
+    const res = await api.get('/portfolio');
+    return res.data;
+  },
+  
+  // Check portfolio generation status
+  getPortfolioStatus: async () => {
+    const res = await api.get('/portfolio/status');
+    return res.data;
+  },
+  
+  // Manually trigger portfolio regeneration
+  regeneratePortfolio: async () => {
+    const res = await api.post('/portfolio/regenerate');
+    return res.data;
+  },
+  
+  // Deprecated - kept for backwards compatibility
+  generatePortfolio: async () => {
+    const res = await api.post('/portfolio/generate');
+    return res.data;
+  }
+};
+
 // Export all APIs
 export default {
   profile: profileApi,
   auth: authApi,
+  portfolio: portfolioApi,
 //   crawl: crawlApi
 };

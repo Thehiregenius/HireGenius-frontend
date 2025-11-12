@@ -1,13 +1,16 @@
 // ...existing code...
 "use client";
 import React, { useEffect, useState } from "react";
-import { Box, Grid, Typography, CircularProgress } from "@mui/material";
+import { Box, Grid, Typography, CircularProgress, Button } from "@mui/material";
+import { AutoAwesome } from "@mui/icons-material";
+import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import AvatarUpload from "@/components/AvatarUpload";
 import ProfileForm from "@/components/ProfileForm";
 import Notification from "@/components/Notification";
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState({
@@ -250,9 +253,32 @@ export default function ProfilePage() {
 
   return (
     <Box sx={{ maxWidth: 920, mx: "auto", p: 3 }}>
-      <Typography variant="h5" gutterBottom>
-        Your Profile
-      </Typography>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+        <Typography variant="h5" gutterBottom>
+          Your Profile
+        </Typography>
+        
+        <Button
+          variant="contained"
+          startIcon={<AutoAwesome />}
+          onClick={() => router.push("/student/portfolio")}
+          sx={{
+            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            color: "#fff",
+            textTransform: "none",
+            fontWeight: 600,
+            px: 3,
+            py: 1,
+            fontSize: { xs: "0.875rem", sm: "1rem" },
+            "&:hover": {
+              background: "linear-gradient(135deg, #5568d3 0%, #66358e 100%)",
+              boxShadow: "0 4px 12px rgba(102, 126, 234, 0.4)",
+            },
+          }}
+        >
+          Generate Portfolio
+        </Button>
+      </Box>
 
       <Grid container spacing={3}>
         <Grid item xs={12} md={4}>
